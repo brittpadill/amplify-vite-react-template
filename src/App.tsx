@@ -1,39 +1,38 @@
-import { useEffect, useState } from "react";
-import type { Schema } from "../amplify/data/resource";
-import { generateClient } from "aws-amplify/data";
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Layout } from "@/components/layout";
+import { ProjectProvider } from "@/lib/mock-data";
 
-const client = generateClient<Schema>();
+import Dashboard from "@/pages/dashboard";
+import ProjectDetail from "@/pages/project-detail";
+import NewProject from "@/pages/new-project";
+import NotFound from "@/pages/not-found";
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Dashboard} />
+      <Route path="/projects/new" component={NewProject} />
+      <Route path="/projects/:id" component={ProjectDetail} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
 
 function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-  useEffect(() => {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }, []);
-
-  function createTodo() {
-    client.models.Todo.create({ content: window.prompt("Todo content") });
-  }
-
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
-        {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
-        ))}
-      </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/react/start/quickstart/#make-frontend-updates">
-          Review next step of this tutorial.
-        </a>
-      </div>
-    </main>
+    <ThemeProvider defaultTheme="system" storageKey="project-tracker-theme">
+      <ProjectProvider>
+        <TooltipProvider>
+          <WouterRouter>
+            <Layout>
+              <Router />
+            </Layout>
+          </WouterRouter>
+        </TooltipProvider>
+      </ProjectProvider>
+    </ThemeProvider>
   );
 }
 
