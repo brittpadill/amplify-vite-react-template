@@ -1,18 +1,21 @@
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] space-y-6 text-center">
-      <div className="bg-destructive/10 p-4 rounded-full">
-        <AlertCircle className="w-12 h-12 text-destructive" />
-      </div>
-      <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight">404 - Page Not Found</h1>
-        <p className="text-muted-foreground text-lg max-w-md mx-auto">The page you're looking for doesn't exist.</p>
-      </div>
-      <Link href="/"><Button size="lg">Return to Dashboard</Button></Link>
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h1 className="text-4xl font-bold">
+        404
+      </h1>
+
+      <p className="mt-4">
+        Page not found
+      </p>
+
+      <Link href="/">
+        <button className="mt-6 px-4 py-2 rounded border">
+          Go Home
+        </button>
+      </Link>
     </div>
   );
 }

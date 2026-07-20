@@ -1,6 +1,5 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { ThemeProvider } from "@/components/theme-provider";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { ProjectProvider } from "@/lib/mock-data";
 
@@ -24,13 +23,11 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="project-tracker-theme">
       <ProjectProvider>
-        <TooltipProvider>
-          <WouterRouter>
-            <Layout>
-              <Router />
-            </Layout>
-          </WouterRouter>
-        </TooltipProvider>
+        <WouterRouter>
+          <Layout>
+            <Router />
+          </Layout>
+        </WouterRouter>
       </ProjectProvider>
     </ThemeProvider>
   );
