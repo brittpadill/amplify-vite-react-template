@@ -1,4 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Authenticator, useAuthenticator} from "@aws-amplify/ui-react";
+import { UserProfile } from "@/components/user-profile";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Layout } from "@/components/layout";
 import { ProjectProvider } from "@/lib/mock-data";
@@ -21,15 +23,39 @@ function Router() {
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="project-tracker-theme">
-      <ProjectProvider>
-        <WouterRouter>
-          <Layout>
-            <Router />
-          </Layout>
-        </WouterRouter>
-      </ProjectProvider>
-    </ThemeProvider>
+    <Authenticator>
+      {({ signOut, user }) => (
+        <>
+          <div className="flex justify-end p-4 border-b">
+            <span className="mr-4">
+              Welcome {user?.signInDetails?.loginId}
+            </span>
+
+            <button
+              className="border rounded px-4 py-2"
+              onClick={signOut}
+            >
+              Sign Out
+            </button>
+          </div>
+
+          <UserProfile />
+          
+          <ThemeProvider
+            defaultTheme="system"
+            storageKey="project-tracker-theme"
+          >
+            <ProjectProvider>
+              <WouterRouter>
+                <Layout>
+                  <Router />
+                </Layout>
+              </WouterRouter>
+            </ProjectProvider>
+          </ThemeProvider>
+        </>
+      )}
+    </Authenticator>
   );
 }
 
