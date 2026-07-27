@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useParams } from "wouter";
-import { useProjects } from "@/lib/mock-data";
+import { useProjects, statusBadgeClass, type ProjectStatus } from "@/lib/mock-data";
 import { motion } from "framer-motion";
 import {
   Upload,
@@ -9,394 +9,250 @@ import {
   CheckSquare,
   ArrowLeft,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuthenticator } from "@aws-amplify/ui-react";
+
+const inputCls =
+  "border border-border rounded-lg p-3 w-full bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground";
 
 export default function ProjectDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
-
-  const {
-    projects,
-    toggleTask,
-    addComment,
-  } = useProjects();
+  const { projects, toggleTask, addComment } = useProjects();
+  const { user } = useAuthenticator();
 
   const [commentText, setCommentText] = useState("");
-  const [activeTab, setActiveTab] = useState("tasks");
+  const [activeTab, setActiveTab] = useState<"tasks" | "photos" | "comments">("tasks");
 
   const project = projects.find((p) => p.id === id);
 
-
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
-
-        <h2 className="text-2xl font-bold">
-          Project not found
-        </h2>
-
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-center">
+        <h2 className="text-2xl font-bold text-foreground">Project not found</h2>
         <button
-          className="border rounded px-4 py-2"
-          onClick={() => setLocation("/")}
+          className="text-sm text-primary hover:underline"
+          onClick={() => setLocation("/projects")}
         >
-          Go back to Dashboard
+          Back to Projects
         </button>
-
       </div>
     );
   }
 
-
-  const done = project.tasks.filter(
-    (t) => t.completed
-  ).length;
-
+  const done = project.tasks.filter((t) => t.completed).length;
   const total = project.tasks.length;
-
-  const progress =
-    total === 0 ? 0 : (done / total) * 100;
-
+  const progress = total === 0 ? 0 : (done / total) * 100;
 
   const handleAddComment = () => {
     if (!commentText.trim()) return;
-
-    addComment(project.id, commentText.trim());
-
+    const author = user?.signInDetails?.loginId?.split("@")[0] ?? "You";
+    addComment(project.id, commentText.trim(), author);
     setCommentText("");
   };
 
+  const tabs: { key: typeof activeTab; icon: React.ElementType; label: string; count: number }[] = [
+    { key: "tasks", icon: CheckSquare, label: "Tasks", count: total },
+    { key: "photos", icon: ImageIcon, label: "Photos", count: project.photos.length },
+    { key: "comments", icon: MessageSquare, label: "Comments", count: project.comments.length },
+  ];
 
   return (
-
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-6 max-w-5xl mx-auto"
+      className="space-y-6 max-w-4xl mx-auto"
     >
+      {/* Back */}
+      <button
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        onClick={() => setLocation("/projects")}
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Projects
+      </button>
 
       {/* Header */}
-
-      <div className="flex items-center gap-4">
-
-        <button
-          className="border rounded p-2"
-          onClick={() => setLocation("/")}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-
-
-        <div>
-
-          <div className="flex items-center gap-3">
-
-            <h1 className="text-3xl font-bold">
-              {project.name}
-            </h1>
-
-
-            <span className="px-2 py-1 rounded border text-sm">
-              {project.status}
-            </span>
-
+      <div className="bg-card border border-border rounded-xl shadow-sm p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl font-bold text-foreground">{project.name}</h1>
+              <span
+                className={cn(
+                  "px-2.5 py-0.5 rounded-full text-xs font-semibold",
+                  statusBadgeClass(project.status as ProjectStatus)
+                )}
+              >
+                {project.status}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
           </div>
-
-
-          <p className="text-gray-500">
-            {project.description}
-          </p>
-
         </div>
 
+        {/* Progress */}
+        {total > 0 && (
+          <div className="mt-4 space-y-1.5">
+            <div className="flex justify-between text-xs font-medium text-muted-foreground">
+              <span>Overall Progress</span>
+              <span>{Math.round(progress)}% &nbsp;&mdash;&nbsp; {done}/{total} tasks</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
-
-
-
-      {/* Progress */}
-
-      <div className="border rounded-lg p-6">
-
-        <div className="flex justify-between text-sm font-medium">
-
-          <span>
-            Overall Progress
-          </span>
-
-          <span>
-            {Math.round(progress)}%
-          </span>
-
-        </div>
-
-
-        <div className="w-full bg-gray-200 rounded h-3 mt-3">
-
-          <div
-            className="bg-blue-500 h-3 rounded"
-            style={{
-              width: `${progress}%`,
-            }}
-          />
-
-        </div>
-
-      </div>
-
-
-
 
       {/* Tabs */}
-
-      <div>
-
-        <div className="flex gap-4 border-b pb-2">
-
-          <button
-            onClick={() => setActiveTab("tasks")}
-            className="flex items-center gap-2"
-          >
-            <CheckSquare className="w-4 h-4" />
-            Tasks ({done}/{total})
-          </button>
-
-
-          <button
-            onClick={() => setActiveTab("photos")}
-            className="flex items-center gap-2"
-          >
-            <ImageIcon className="w-4 h-4" />
-            Photos ({project.photos.length})
-          </button>
-
-
-          <button
-            onClick={() => setActiveTab("comments")}
-            className="flex items-center gap-2"
-          >
-            <MessageSquare className="w-4 h-4" />
-            Comments ({project.comments.length})
-          </button>
-
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="flex border-b border-border">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors border-b-2",
+                activeTab === tab.key
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+              <span className="text-xs text-muted-foreground">({tab.count})</span>
+            </button>
+          ))}
         </div>
 
-
-
-        <div className="mt-6">
-
-
+        <div className="p-5">
           {/* Tasks */}
-
           {activeTab === "tasks" && (
-
-            project.tasks.length === 0 ?
-
-              <div className="border rounded p-8 text-center">
-                No tasks yet.
+            project.tasks.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground">
+                <CheckSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>No tasks yet.</p>
               </div>
-
-            :
-
-              <div className="border rounded divide-y">
-
+            ) : (
+              <ul className="divide-y divide-border">
                 {project.tasks.map((task) => (
-
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-4"
-                  >
-
+                  <li key={task.id} className="flex items-center gap-3 py-3">
                     <input
                       type="checkbox"
+                      id={`task-${task.id}`}
                       checked={task.completed}
-                      onChange={() =>
-                        toggleTask(project.id, task.id)
-                      }
+                      onChange={() => toggleTask(project.id, task.id)}
+                      className="w-4 h-4 accent-primary rounded"
                     />
-
-
-                    <span
-                      className={
-                        task.completed
-                          ? "line-through text-gray-500"
-                          : ""
-                      }
+                    <label
+                      htmlFor={`task-${task.id}`}
+                      className={cn(
+                        "text-sm cursor-pointer select-none",
+                        task.completed ? "line-through text-muted-foreground" : "text-foreground"
+                      )}
                     >
                       {task.title}
-                    </span>
-
-
-                  </div>
-
+                    </label>
+                  </li>
                 ))}
-
-              </div>
-
+              </ul>
+            )
           )}
-
-
-
 
           {/* Photos */}
-
           {activeTab === "photos" && (
-
             <div className="space-y-4">
-
-              <button className="border rounded px-4 py-2 flex items-center gap-2">
-
+              <button className="inline-flex items-center gap-2 border border-border rounded-lg px-4 py-2 text-sm hover:bg-muted/60 transition-colors">
                 <Upload className="w-4 h-4" />
-
                 Upload Photo
-
               </button>
-
-
-
-              {
-                project.photos.length === 0 ?
-
-                <div className="border rounded p-8 text-center">
-                  No photos yet.
+              {project.photos.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground">
+                  <ImageIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No photos yet.</p>
                 </div>
-
-                :
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {project.photos.map((photo) => (
-
-                    <div
-                      key={photo.id}
-                      className="border rounded overflow-hidden"
-                    >
-
-                      <div className="aspect-video flex items-center justify-center bg-gray-400">
-
-                        <ImageIcon className="w-12 h-12 text-white" />
-
+                    <div key={photo.id} className="border border-border rounded-lg overflow-hidden">
+                      <div
+                        className={cn(
+                          "aspect-video flex items-center justify-center bg-gradient-to-br",
+                          photo.color
+                        )}
+                      >
+                        <ImageIcon className="w-10 h-10 text-white/70" />
                       </div>
-
-
-                      <div className="p-4 font-medium">
-                        {photo.title}
-                      </div>
-
-
+                      <div className="p-3 text-sm font-medium text-foreground">{photo.title}</div>
                     </div>
-
                   ))}
-
                 </div>
-              }
-
-
+              )}
             </div>
-
           )}
 
-
-
-
-
           {/* Comments */}
-
           {activeTab === "comments" && (
-
-            <div className="space-y-6">
-
-
-              <div className="border rounded p-6 space-y-4">
-
-
+            <div className="space-y-5">
+              {/* New comment */}
+              <div className="space-y-3">
                 <textarea
-                  className="border rounded p-3 w-full min-h-[100px]"
-                  placeholder="Write a comment..."
+                  className={cn(inputCls, "min-h-[90px] resize-none")}
+                  placeholder="Write a comment…"
                   value={commentText}
-                  onChange={(e) =>
-                    setCommentText(e.target.value)
-                  }
+                  onChange={(e) => setCommentText(e.target.value)}
                 />
-
-
                 <div className="flex justify-end">
-
                   <button
-                    className="border rounded px-4 py-2"
+                    className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
                     onClick={handleAddComment}
                     disabled={!commentText.trim()}
                   >
                     Post Comment
                   </button>
-
                 </div>
-
-
               </div>
 
-
-
-
-
-              {project.comments.length === 0 ?
-
-                <div className="border rounded p-8 text-center">
-                  No comments yet.
+              {/* Comment list */}
+              {project.comments.length === 0 ? (
+                <div className="py-10 text-center text-muted-foreground">
+                  <MessageSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No comments yet.</p>
                 </div>
-
-              :
-
-                project.comments.map((comment) => (
-
-                  <div
-                    key={comment.id}
-                    className="border rounded p-6"
-                  >
-
-                    <div className="flex gap-4">
-
-                      <div className="w-10 h-10 rounded-full border flex items-center justify-center">
+              ) : (
+                <ul className="space-y-4">
+                  {project.comments.map((comment) => (
+                    <li key={comment.id} className="flex gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                         {comment.avatarFallback}
                       </div>
-
-
-                      <div>
-
-                        <div className="font-medium">
-                          {comment.author}
+                      <div className="bg-muted/40 border border-border rounded-lg p-3 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-foreground">
+                            {comment.author}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(comment.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
                         </div>
-
-
-                        <div className="text-sm text-gray-500">
-                          {new Date(comment.date).toLocaleDateString()}
-                        </div>
-
-
-                        <p className="mt-2">
-                          {comment.text}
-                        </p>
-
-
+                        <p className="text-sm text-foreground">{comment.text}</p>
                       </div>
-
-                    </div>
-
-                  </div>
-
-                ))
-
-              }
-
-
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-
           )}
-
-
         </div>
-
       </div>
-
-
     </motion.div>
-
   );
 }

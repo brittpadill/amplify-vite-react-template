@@ -1,50 +1,51 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
-import { Authenticator, useAuthenticator} from "@aws-amplify/ui-react";
-import { UserProfile } from "@/components/user-profile";
+import { Authenticator } from "@aws-amplify/ui-react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Layout } from "@/components/layout";
-import { ProjectProvider } from "@/lib/mock-data";
+import { EstimateProvider, ProjectProvider } from "@/lib/mock-data";
 
-import Dashboard from "@/pages/dashboard";
+// Pages
+import EstimatesDashboard from "@/pages/estimates-dashboard";
+import NewEstimate from "@/pages/new-estimate";
+import EstimateHistory from "@/pages/estimate-history";
+import EstimateDetail from "@/pages/estimate-detail";
+import Customers from "@/pages/customers";
+import Projects from "@/pages/projects";
 import ProjectDetail from "@/pages/project-detail";
-import NewProject from "@/pages/new-project";
+import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/projects/new" component={NewProject} />
+      {/* Estimates — primary workflow */}
+      <Route path="/" component={EstimatesDashboard} />
+      <Route path="/estimates/new" component={NewEstimate} />
+      <Route path="/estimates/history" component={EstimateHistory} />
+      <Route path="/estimates/:id" component={EstimateDetail} />
+
+      {/* Customers */}
+      <Route path="/customers" component={Customers} />
+
+      {/* Projects — secondary workflow */}
+      <Route path="/projects" component={Projects} />
       <Route path="/projects/:id" component={ProjectDetail} />
+
+      {/* Settings */}
+      <Route path="/settings" component={Settings} />
+
+      {/* 404 */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <Authenticator>
-      {({ signOut, user }) => (
-        <>
-          <div className="flex justify-end p-4 border-b">
-            <span className="mr-4">
-              Welcome {user?.signInDetails?.loginId}
-            </span>
-
-            <button
-              className="border rounded px-4 py-2"
-              onClick={signOut}
-            >
-              Sign Out
-            </button>
-          </div>
-
-          <UserProfile />
-          
-          <ThemeProvider
-            defaultTheme="system"
-            storageKey="project-tracker-theme"
-          >
+      {() => (
+        <ThemeProvider defaultTheme="system" storageKey="plumbing-estimator-theme">
+          <EstimateProvider>
             <ProjectProvider>
               <WouterRouter>
                 <Layout>
@@ -52,11 +53,9 @@ function App() {
                 </Layout>
               </WouterRouter>
             </ProjectProvider>
-          </ThemeProvider>
-        </>
+          </EstimateProvider>
+        </ThemeProvider>
       )}
     </Authenticator>
   );
 }
-
-export default App;
