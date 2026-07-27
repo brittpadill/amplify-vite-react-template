@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import {
@@ -9,12 +10,42 @@ import {
 } from "lucide-react";
 import { useProjects, statusBadgeClass, type ProjectStatus } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { getProjects } from "@/api/projects";
 
 export default function Projects() {
   const { projects } = useProjects();
 
+  const [apiProjects, setApiProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+  async function loadProjects() {
+    try {
+      const data = await getProjects();
+      setApiProjects(data.projects);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  loadProjects();
+}, []);
+
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+
+      <div>
+        <h2 className="text-xl font-bold">
+          API Projects
+        </h2>
+
+        {apiProjects.map((project) => (
+          <div key={project.id}>
+            {project.name}
+          </div>
+       ))}
+    </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
